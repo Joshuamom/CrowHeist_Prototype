@@ -1,99 +1,75 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using KinematicCharacterController;
-using KinematicCharacterController.Examples;
 
 namespace KinematicCharacterController.Examples
 {
     public class ExamplePlayer2P5D : MonoBehaviour
     {
-        public ExampleCharacterController Character;
-        public ExampleCharacterCamera CharacterCamera;
+        // Public fields to adjust in the Unity Inspector
+        public float moveSpeed = 5f;
+        public float jumpForce = 8f;
+        public Transform groundCheck;
+        public LayerMask groundLayer;
 
-        private const string MouseXInput = "Mouse X";
-        private const string MouseYInput = "Mouse Y";
-        private const string MouseScrollInput = "Mouse ScrollWheel";
-        private const string HorizontalInput = "Horizontal";
-        private const string VerticalInput = "Vertical";
+        // Private fields
+        private Rigidbody rb;
+        private bool isGrounded;
+        private float groundCheckRadius = 0.2f;
 
-        private void Start()
+        void Start()
         {
-            Cursor.lockState = CursorLockMode.Locked;
-
-            // Tell camera to follow transform
-            //CharacterCamera.SetFollowTransform(Character.CameraFollowPoint);
-
-            // Ignore the character's collider(s) for camera obstruction checks
-            //CharacterCamera.IgnoredColliders.Clear();
-            //CharacterCamera.IgnoredColliders.AddRange(Character.GetComponentsInChildren<Collider>());
+            // Get the Rigidbody component
+            rb = GetComponent<Rigidbody>();
         }
 
-        private void Update()
+        void Update()
         {
-            if (Input.GetMouseButtonDown(0))
+            // Handle movement
+            Move();
+
+            // Check if the player is grounded before jumping
+            isGrounded = Physics.CheckSphere(groundCheck.position, groundCheckRadius);
+            if (Input.GetButtonDown("Jump") && isGrounded)
             {
-                Cursor.lockState = CursorLockMode.Locked;
-            }
-
-            HandleCharacterInput();
-        }
-
-        private void LateUpdate()
-        {
-            //// Handle rotating the camera along with physics movers
-            //if (CharacterCamera.RotateWithPhysicsMover && Character.Motor.AttachedRigidbody != null)
-            //{
-            //    CharacterCamera.PlanarDirection = Character.Motor.AttachedRigidbody.GetComponent<PhysicsMover>().RotationDeltaFromInterpolation * CharacterCamera.PlanarDirection;
-            //    CharacterCamera.PlanarDirection = Vector3.ProjectOnPlane(CharacterCamera.PlanarDirection, Character.Motor.CharacterUp).normalized;
-            //}
-
-            //HandleCameraInput();
-        }
-
-        private void HandleCameraInput()
-        {
-            // Create the look input vector for the camera
-            float mouseLookAxisUp = Input.GetAxisRaw(MouseYInput);
-            float mouseLookAxisRight = Input.GetAxisRaw(MouseXInput);
-            Vector3 lookInputVector = new Vector3(mouseLookAxisRight, mouseLookAxisUp, 0f);
-
-            // Prevent moving the camera while the cursor isn't locked
-            if (Cursor.lockState != CursorLockMode.Locked)
-            {
-                lookInputVector = Vector3.zero;
-            }
-
-            // Input for zooming the camera (disabled in WebGL because it can cause problems)
-            float scrollInput = -Input.GetAxis(MouseScrollInput);
-#if UNITY_WEBGL
-        scrollInput = 0f;
-#endif
-
-            // Apply inputs to the camera
-            CharacterCamera.UpdateWithInput(Time.deltaTime, scrollInput, lookInputVector);
-
-            // Handle toggling zoom level
-            if (Input.GetMouseButtonDown(1))
-            {
-                CharacterCamera.TargetDistance = (CharacterCamera.TargetDistance == 0f) ? CharacterCamera.DefaultDistance : 0f;
+                Jump();
             }
         }
 
-        private void HandleCharacterInput()
+        private void Move()
         {
-            PlayerCharacterInputs characterInputs = new PlayerCharacterInputs();
+            // Get horizontal input (e.g., A/D keys or arrow keys)
 
-            // Build the CharacterInputs struct
-            characterInputs.MoveAxisForward = Input.GetAxisRaw(HorizontalInput);
-            characterInputs.MoveAxisRight = -Input.GetAxisRaw(VerticalInput);
-            //characterInputs.CameraRotation = CharacterCamera.Transform.rotation;
-            characterInputs.JumpDown = Input.GetKeyDown(KeyCode.Space);
-            characterInputs.CrouchDown = Input.GetKeyDown(KeyCode.C);
-            characterInputs.CrouchUp = Input.GetKeyUp(KeyCode.C);
+            Vector3 moveInput = new Vector3(Input.GetAxis("Horizontal"), 0 ,Input.GetAxis("Vertical"));
 
-            // Apply inputs to character
-            Character.SetInputs(ref characterInputs);
+            // Apply movement
+            rb.velocity = moveInput * moveSpeed;
+
+            // Rotate the character to face the movement direction
+            if (moveInput != Vector3.zero)
+            {
+                transform.rotation = Quaternion.LookRotation(moveInput);
+            }
+            else
+            {
+                rb.velocity = new Vector3(0, rb.velocity.y, 0);
+            }
+        }
+
+        private void Jump()
+        {
+            // Apply an upward force to the Rigidbody for jumping
+            rb.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
+        }
+
+        void OnDrawGizmosSelected()
+        {
+            // Visualize the ground check in the Scene view
+            if (groundCheck != null)
+            {
+                Gizmos.color = Color.red;
+                Gizmos.DrawSphere(groundCheck.position, groundCheckRadius);
+            }
         }
     }
 }
