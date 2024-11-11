@@ -6,7 +6,7 @@ using KinematicCharacterController.Examples;
 
 namespace KinematicCharacterController.Examples
 {
-    public class ExamplePlayer : MonoBehaviour
+    public class ExamplePlayer2P5D : MonoBehaviour
     {
         public ExampleCharacterController Character;
         public ExampleCharacterCamera CharacterCamera;
@@ -85,8 +85,8 @@ namespace KinematicCharacterController.Examples
             PlayerCharacterInputs characterInputs = new PlayerCharacterInputs();
 
             // Build the CharacterInputs struct
-            characterInputs.MoveAxisForward = Input.GetAxisRaw(VerticalInput);
-            characterInputs.MoveAxisRight = Input.GetAxisRaw(HorizontalInput);
+            characterInputs.MoveAxisForward = Input.GetAxisRaw(HorizontalInput);
+            characterInputs.MoveAxisRight = -Input.GetAxisRaw(VerticalInput);
             //characterInputs.CameraRotation = CharacterCamera.Transform.rotation;
             characterInputs.JumpDown = Input.GetKeyDown(KeyCode.Space);
             characterInputs.CrouchDown = Input.GetKeyDown(KeyCode.C);
